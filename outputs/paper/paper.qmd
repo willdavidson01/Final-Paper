@@ -1,12 +1,12 @@
 ---
-title: ""The Plight of Toronto's Homeless: Understanding the Causes and Seeking Solutions""
+title: "The Plight of Toronto's Homeless: Understanding the Causes and Seeking Solutions"
 subtitle: "My subtitle if needed"
 author: 
   - Will Davidson
 thanks: "Code and data are available at: LINK."
 date: "`r Sys.time()`"
-date-format: "5 April 2023"
-abstract: "Toronto has been experiencing a significant rise in homelessness, with a large sum of individuals sleeping in shelters or on the streets each night. The factors contributing to this issue are complex and multifaceted, including high housing costs, inadequate social assistance programs, and mental health and addiction challenges. The COVID-19 pandemic has only exacerbated the problem, with job losses and economic uncertainty leading to more individuals experiencing housing insecurity. Addressing this crisis will require a comprehensive approach that prioritizes affordable housing, social support programs, and mental health and addiction services."
+date-format: "D MMMM YYYY"
+abstract: "Toronto has been experiencing a large rise in homelessness, with people sleeping in shelters or on the streets each night. The factors contributing to this issue are multiplex and manysided, including high housing costs, inadequate social assistance programs, and mental health and addiction challenges. The COVID-19 pandemic has only added to the problem, with job losses and economic uncertainty leading to more Torontoians experiencing housing insecurity. Addressing this crisis will require a comprehensive approach that prioritizes affordable housing, social support programs, and mental health and addiction services."
 format: pdf
 number-sections: true
 bibliography: references.bib
@@ -24,7 +24,7 @@ library(palmerpenguins)
 
 # Introduction
 
-Homelessness is a growing concern in many urban centers around the world, and Toronto is no exception. The city has experienced a significant rise in homelessness in recent years, with an estimated 10,000 individuals experiencing homelessness on any given night. This issue is not just about a lack of housing, but also about a lack of access to basic necessities such as food, healthcare, and employment opportunities. Homelessness is a complex problem with no easy solutions, but it is crucial that we address it with urgency and compassion. In this context, understanding the factors contributing to homelessness in Toronto and exploring potential solutions is crucial for the well-being of the city's most vulnerable populations.
+Homelessness is a cause of concern in many urban cities around the world, and Toronto is no exception. The city has experienced a notable rise in homelessness in recent years, with an estimated 10,000 individuals experiencing homelessness on any given night. This issue is not just about a lack of housing, but also about a lack of access to basic necessities such as food, healthcare, and employment opportunities. Homelessness is a complex problem with no easy solutions, but it is crucial that we address it with urgency and compassion. In this context, understanding the factors contributing to homelessness in Toronto and exploring potential solutions is crucial for the well-being of the city's most vulnerable populations.
 
 
 
