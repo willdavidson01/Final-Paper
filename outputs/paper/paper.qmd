@@ -3,7 +3,7 @@ title: "The Plight of Toronto's Homeless: Understanding the Causes and Seeking S
 subtitle: "My subtitle if needed"
 author: 
   - Will Davidson
-thanks: "Code and data are available at: LINK."
+thanks: "Code and data are available at: https://github.com/willdavidson01/Final-Paper/tree/main/outputs/paper."
 date: "`r Sys.time()`"
 date-format: "D MMMM YYYY"
 abstract: "Toronto has been experiencing a large rise in homelessness, with people sleeping in shelters or on the streets each night. The factors contributing to this issue are multiplex and manysided, including high housing costs, inadequate social assistance programs, and mental health and addiction challenges. The COVID-19 pandemic has only added to the problem, with job losses and economic uncertainty leading to more Torontoians experiencing housing insecurity. Addressing this crisis will require a comprehensive approach that prioritizes affordable housing, social support programs, and mental health and addiction services."
