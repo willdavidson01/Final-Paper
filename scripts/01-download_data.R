@@ -11,16 +11,20 @@
 #### Workspace setup ####
 library(opendatatoronto)
 library(tidyverse)
-# [...UPDATE THIS...]
+
 
 #### Download data ####
-# [...ADD CODE HERE TO DOWNLOAD...]
+list <- list_package_resources("https://open.toronto.ca/dataset/toronto-shelter-system-flow/")
+#a <- search_packages("toronto shelter system flow")
+
+df <- list[list$name=='toronto-shelter-system-flow.csv',] %>%
+  get_resource()
 
 
 
 #### Save data ####
 # [...UPDATE THIS...]
 # change the_raw_data to whatever name you assigned when you downloaded it.
-write_csv(the_raw_data, "inputs/data/raw_data.csv") 
+write_csv(df, "inputs/data/raw_data.csv") 
 
          

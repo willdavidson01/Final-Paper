@@ -6,7 +6,7 @@ author:
 thanks: "Code and data are available at: https://github.com/willdavidson01/Final-Paper/tree/main/outputs/paper."
 date: "`r Sys.time()`"
 date-format: "D MMMM YYYY"
-abstract: "Toronto has been experiencing a large rise in homelessness, with people sleeping in shelters or on the streets each night. The factors contributing to this issue are multiplex and manysided, including high housing costs, inadequate social assistance programs, and mental health and addiction challenges. The COVID-19 pandemic has only added to the problem, with job losses and economic uncertainty leading to more Torontoians experiencing housing insecurity. Addressing this crisis will require a comprehensive approach that prioritizes affordable housing, social support programs, and mental health and addiction services."
+abstract: "People suffering from homelessness in the City of Toronto have become an accepted part of the urban landscape.  With the shortage of affordable housing, high rents, poor economy and rising mental health concerns, it’s hard to imagine a viable solution to this critical social determinant of health.  Using OpenDataToronto, this paper analyzes data and identifies trends in different populations, gender, and age, as well as the current capacity to house people either in an emergency or permanent housing. It also challenges current assumptions and draws attention to the fact that today’s data can provide solutions to tomorrow’s needs."
 format: pdf
 number-sections: true
 bibliography: references.bib
@@ -17,63 +17,256 @@ bibliography: references.bib
 #| warning: false
 #| message: false
 
-library(tidyverse)
-library(palmerpenguins)
+library(opendatatoronto)
+library(lubridate)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(tinytex)
+library(knitr)
+
+list <- list_package_resources("https://open.toronto.ca/dataset/toronto-shelter-system-flow/")
+#a <- search_packages("toronto shelter system flow")
+
+df <- list[list$name=='toronto-shelter-system-flow.csv',] %>%
+  get_resource()
 ```
 
 
 # Introduction
 
-Homelessness is a cause of concern in many urban cities around the world, and Toronto is no exception. The city has experienced a notable rise in homelessness in recent years, with an estimated 10,000 individuals experiencing homelessness on any given night. This issue is not just about a lack of housing, but also about a lack of access to basic necessities such as food, healthcare, and employment opportunities. Homelessness is a complex problem with no easy solutions, but it is crucial that we address it with urgency and compassion. In this context, understanding the factors contributing to homelessness in Toronto and exploring potential solutions is crucial for the well-being of the city's most vulnerable populations.
+
+Despite economic growth and developments in the city, Toronto continues to work to help people experiencing homelessness, with the issue worsening over time. We've seen Toronto try and take action through different housing and recreation centers, but these attempts have fallen short of solving the problem. Individuals have struggled through extreme weather conditions and overcrowded shelters, with waitlists of up to ten years for subsidized housing. The supportive shelters can't keep up with the demand because of the intake of refugees, Toronto's condo boom, and Toronto's fight against drug and alcohol abuse. The complex issue at hand requires a complex solution from the city. Inadequate income, inaccessible housing, racism in employment, and housing markets contribute to homelessness. Regardless of socioeconomic status, fairness, inclusion, and opportunity need to happen to give each individual a chance to thrive. Everyone should be on the same playing field and given the same advantages, but this isn't the case, as some people are dealt the wrong hands and need help working through it. Homeless people are marginalized, and they're pushed to the side and deemed less important. The government needs to take urgent action to address the root causes of homelessness, as living on the streets puts individuals at risk of poor health and premature death. Should the government declare a state of emergency? Should more homeless shelters be built? What are the most significant issues the government faces when finding a solution? These critical questions need to be asked to move forward as one. 
+
+The data used in the report is obtained from OpenDataToronto. The dataset is called "Toronto Shelter System Flow," It provides information on who in Toronto is accessing overnight services between 2019 and 2023. I'm focused on the year the dataset is from, the number of homeless individuals, and how they're represented in the Toronto population. In section 2, a cleaned dataset is obtained and explained to provide further analysis. Visualizations in graphs and tables are presented to illustrate the correlation between year, homelessness, category, age, and race. By data visualization, we assume the number of homeless people over the past five years has risen before constructing the model. Section 3 presents a multiple linear regression model to justify the relationship between homelessness and year. The interpretation of the final model and reasoning is shown in the latter section. A discussion is carried out in section 5 on the implications of the findings, including causes and solutions. We also conclude with the following steps that need to be taken for a better future. 4
+
+# Estimand
+
+The estimand is the difference in shelter usage between different demographic groups, such as men and women, or different age ranges. This could be estimated by comparing the number of individuals in each group who use the shelter system, and examining any differences in usage patterns or other factors that might influence shelter use.
+
+# Data Collection
+
+The raw data was obtained from Opendatatoronto within the "Toronto System Shelter Flow". The data for the System Flow is captured through an information management system used to operate overnight shelters, 24-hour repsite sites, and warming centers funded by the City of Toronto. The data is calculated on the last day of each month and it considers all people who accessed overnight shelters. The analysis of the data was done through the R programming language [@citeR] with the tidyverse [@citeTidyverse], dplyr [@citedplyr], and knitr (@citeknitr) packages being used to clean the data. ggplot2 [@citeggplot2] was used to produce all the figures in this paper. The Lubridate [@citelubridate] package was also used to reformat dates. 
+
+
 
 
 
 # Data {#sec-data}
 
-Our data is of penguins (@fig-bills).
-
-```{r}
-#| label: fig-bills
-#| fig-cap: Bills of penguins
+```{r} 
+#| label: fig-1
+#| fig-cap: "Homeless Population Groups in Toronto From 2019 to 2023"
 #| echo: false
+#| warning: false
+library(tidyverse)
 
-ggplot(penguins, aes(x = island, fill = species)) +
-  geom_bar(alpha = 0.8) +
-  scale_fill_manual(values = c("darkorange","purple","cyan4"),
-                    guide = "none") +
-  theme_minimal() +
-  facet_wrap(~species, ncol = 1) +
-  coord_flip()
+df$new_date = dmy(paste0("01-", df$date.mmm.yy.))
+df$year = as.factor(year(df$new_date))
+df$month = as.factor(month(df$new_date))
+df$population_group = as.factor(df$population_group)
+attach(df)
+aux <- df %>% 
+  filter(population_group != 'All Population') %>% 
+  group_by(year, month, population_group) %>% 
+  summarise(actively_homeless = sum(actively_homeless)) %>% 
+  mutate(date = as.Date(paste0(year,'-',month,'-','01')))
+
+ggplot(data = aux, aes(x = date, y = actively_homeless, color = population_group)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  theme_classic() +
+  labs(title = "Scatter Plot",
+       x = "Date",
+       y = "Actively Homeless")+
+  scale_x_date(date_breaks = "12 months", date_labels = "%Y") 
 ```
 
-Talk more about it.
+Figure 1 represents a scatter plot that shows the trends of in Toronot's homelessness in the past five years. The Y-Axis is the number of current Torontoians who are actively homeless and the X-Axis are the twelve months in each of the past five years. The population groups are represented by individual data points. 
 
-Also bills and their average (@fig-billssssss). (You can change the height and width, but don't worry about doing that until you have finished every other aspect of the paper - Quarto will try to make it look nice and the defaults usually work.)
+There are line of best fits for each different category that make up the population. From 2020 to 2021 there was a sharp drop in homelessness for families and refugees, but since then they've both been rising with refugees seeing a spike in 2022. 
+
+In contrast, youth, chronic, Indigenous, and non-refugees, have seen an increase in population from 2018. Youth and Indigenous have been steady throughout the years, while chronic homelessness is on a serious rise with no period of drops from 2018. 
+
+Single adults and Non-refugees have always had the largest numbers and have continued to rise exponentially over the years. Homelessness is a major issue that needs attention and action from the City of Toronto and policymakers.
 
 ```{r}
-#| label: fig-billssssss
-#| fig-cap: More bills of penguins
+#| label: fig-2
+#| fig-cap: "Homeless Population Based on Gender"
 #| echo: false
-#| fig-width: 8
-#| fig-height: 4
+#| warning: false
+library(tidyverse)
 
-ggplot(penguins, aes(x = island, fill = species)) +
-  geom_bar(alpha = 0.8) +
-  scale_fill_manual(values = c("darkorange","purple","cyan4"),
-                    guide = "none") +
-  theme_minimal() +
-  facet_wrap(~species, ncol = 1) +
-  coord_flip()
+#2nd graph
+aux = df[,c("actively_homeless", "gender_male", "gender_female",
+            "gender_transgender.non.binary_or_two_spirit", "new_date", "year", "month")] %>% 
+  group_by(year, month) %>% 
+  summarise(Male = sum(gender_male),
+            Female = sum(gender_female),
+            lgbtq = sum(gender_transgender.non.binary_or_two_spirit)) %>% 
+  mutate(date = as.Date(paste0(year,'-',month,'-','01')),
+         Total = Male + Female + lgbtq)
+
+data_long <- reshape2::melt(aux[,-c(1,2)], id.vars = "date", variable.name = "Category", value.name = "value")
+data_long = data_long[order(data_long$date, data_long$Category),]
+data_long$Category <- factor(data_long$Category, levels = c("Total", "Male", "Female","lgbtq"))
+
+ggplot(data = data_long, aes(x = date, y = value, color = Category)) + 
+  geom_line(size = 2) +
+  theme_classic() +
+  labs(title = "Line Graph",
+       x = "Date",
+       y = "Actively Homeless")+
+  scale_x_date(date_breaks = "12 months", date_labels = "%Y") 
 ```
 
-Talk way more about it. 
+Figure two are multiple line graphs that compare the number of actively homeless people based on gender over the past five years. 
 
+The lines on the graph represent the total number of active homeless individuals as well as male, female, and LGBTQ+. Since, the LGBTQ+ community is a small part of the population they're graphed near the bottom of the Y-Axis.
+
+There are more homeless men than women, and the trends over the past five years are very similar for both genders. The peaks and troughs seem exact to the naked eye. 
+
+```{r}
+#| label: fig-3
+#| fig-cap: "Homeless Population by Age Group in Toronto"
+#| echo: false
+#| warning: false
+library(tidyverse)
+#3rd graph
+aux = df %>% 
+  select(date.mmm.yy., ageunder16, age16.24, age25.44, age45.64, age65over) %>% 
+  filter(population_group == 'All Population' & #or chronic ??
+    date.mmm.yy. %in% c('Jan-19','Jan-23'))
+
+data_long <- reshape2::melt(aux, id.vars = "date.mmm.yy.", variable.name = "Category", value.name = "value")
+
+ggplot(data_long, aes(fill=date.mmm.yy., y=value, x=Category)) + 
+  geom_bar(position="dodge", stat="identity", show.legend = FALSE) +
+  geom_text(aes(label = date.mmm.yy.), position = position_dodge(width = 1), vjust = -0.5) +
+  theme_classic() +
+  labs(title = "Double Bar Graph",
+       x = "Age",
+       y = "All Population") +
+  scale_x_discrete(labels = c("Under 16", "16 to 24", "25 to 44","45 to 64","65+"))
+```
+
+Figure 3 is a double bar graph comparing the total population of homeless people by age. We're able to see how the total numbers have changed from January 2019 to January 2023. There have been peaks and troughs throughout but this graph makes it simple to see things have changed. 
+
+The number of youth under 16 have dropped over the past five years. This is the only age group to decline at a noticeably high rate, although 18-24 also saw a slight drop. The youth have been a focus and topic of interest and are recieving the support they need. 
+
+The highest number of homeless individuals continue to be 25 to 44. The age group continues to be at the top and is growing at the fastest rate. 
+
+Finally, the age groups 45-64 and 65+ have seen slight increases in the homeless populations over time. This is still worrying and changed need to be made.
+
+
+```{r}
+#| label: fig-4
+#| fig-cap: "Percentage of Homeless Population in Toronto by Group"
+#| echo: false
+#| warning: false
+#Table 1 : in a chunk of course in the quadro file !!
+aux <- df %>% 
+  filter(substr(date.mmm.yy., 1, 3)=='Jan' & year != 2018 &
+           !population_group %in% c('All Population')) %>% 
+  select(date.mmm.yy., population_group, population_group_percentage)
+data_wide <- spread(aux, key = date.mmm.yy., value = population_group_percentage)
+names(data_wide)[1] = 'Population Group'
+kable(data_wide)
+```
+
+Table 1 provides data on the percentage of homeless individuals based on population group over the course of five years from January 2019 to January 2023. "Chronic" homelessness are individuals who have been homeless for a long period of time. The percentage of chronic homeless people have increased each year from 30.3% in January 2019  to 46.9% in January 2023.
+
+The "families" population group are homeless families and they've had flucuations over the years. They decreased 12% from January 2019 to January 2022, but have seen a slight increase of 4% in January 2023.
+
+The "Indigenous" population group are individuals who identify as Indigenous and they've only been introduced to dataset in 2021. They've remained constant within two percentage points in each of the three years. 
+
+"Non Refugees" and "Refugees" refer to the population groups of the homeless who are refugees and who aren't. Non-Refugees are a larger part of the population and have seen a large increase from 67% in January 2019 to 87.3% in January 201. The homeless refugees decreased throughout the pandemic to 12.7% but have risen in 2023 up to 33.4%
+
+"Single adults" are individuals who are not involved in a married relationship and their percentage has seen a high of 74.6% in January 2021 from the lowest point in January 2019 of 58.6%.
+
+Lastly, the "youth" population are individuals under the age of 25 adn they've been the lowest of any of the other categories. They've been stable from 9.0% in 2022 to 10.0% in 2023. The table is meant to provide a meaningful demographic representation of the homeless population in Toronto.
+
+```{r}
+#| label: fig-5
+#| fig-cap: "Percentage of Homeless Population in Toronto by Group"
+#| echo: false
+#| warning: false
+df$new_date = dmy(paste0("01-", df$date.mmm.yy.))
+df$year = as.factor(year(df$new_date))
+df$month = as.factor(month(df$new_date))
+df$population_group = as.factor(df$population_group)
+attach(df)
+aux <- df %>% 
+  filter(population_group == 'All Population') %>% 
+  group_by(year, month) %>% 
+  summarise(actively_homeless = sum(actively_homeless)) %>% 
+  mutate(date = as.Date(paste0(year,'-',month,'-','01')))
+
+ggplot(data = aux, aes(x = date, y = actively_homeless)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  theme_classic() +
+  labs(title = "Scatter Plot",
+       x = "Date",
+       y = "Actively Homeless")+
+  scale_x_date(date_breaks = "12 months", date_labels = "%Y") 
+```
+
+
+
+```{r}
+#| label: fig-6
+#| fig-cap: "Percentage of Homeless Population in Toronto by Group"
+#| echo: false
+#| warning: false
+df$new_date = dmy(paste0("01-", df$date.mmm.yy.))
+df$year = as.factor(year(df$new_date))
+df$month = as.factor(month(df$new_date))
+df$population_group = as.factor(df$population_group)
+attach(df)
+aux = df[,c("newly_identified", "returned_from_housing", "returned_to_shelter",
+            "moved_to_housing", "became_inactive", "new_date", "year", "month")] %>% 
+  group_by(year, month) %>% 
+  summarise(Newly_identified = sum(newly_identified),
+            Returned_from_housing = sum(returned_from_housing),
+            Returned_to_shelter = sum(returned_to_shelter),
+            Moved_to_housing = sum(moved_to_housing),
+            Became_inactive = sum(became_inactive)) %>% 
+  mutate(date = as.Date(paste0(year,'-',month,'-','01')))
+
+data_long <- reshape2::melt(aux[,-c(1,2)], id.vars = "date", variable.name = "Category", value.name = "value")
+data_long = data_long[order(data_long$date, data_long$Category),]
+
+ggplot(data = data_long, aes(x = date, y = value, color = Category)) + 
+  geom_line(size = 2) +
+  theme_classic() +
+  labs(title = "Line Graph",
+       x = "Date",
+       y = "# of people")+
+  scale_x_date(date_breaks = "12 months", date_labels = "%Y")+
+  scale_color_discrete(name="Category",labels=c("Newly identified", 
+              "Returned from housing","Returned to shelter",
+              "Moved to housing", "Became inactive"))
+```
 
 
 # Model
 
 $$
-Pr(\theta | y) = \frac{Pr(y | \theta) Pr(\theta)}{Pr(y)}
+aux = df %>% 
+  filter(population_group == 'All Population') %>% 
+  select(year, month, actively_homeless) %>% 
+  mutate(date = as.Date(paste0(year,'-',month,'-','01'))) %>% 
+  mutate(new_date = seq(min(date),max(date), by = 'month'))
+
+ggplot(aux, aes(x = new_date, y = actively_homeless)) +
+  geom_line(color = "blue") +
+  labs(title = "Sales over Time",
+       x = "Time",
+       y = "Actively homeless") +
+  scale_x_date(date_labels = "%b %Y", date_breaks = "1 year") +
+  theme_bw()
+
 $$ {#eq-bayes}
 
 @eq-bayes seems useful, eh?
@@ -85,19 +278,46 @@ We can use maths by including latex between dollar signs, for instance $\theta$.
 
 # Results
 
+Men accounted for 77 per cent of homeless deaths in 2022 and the age group with the highest percentage of deaths was people aged 40 to 59, at 34 per cent.
+
+The reasons for why there are more homeless men than women and less LGBTQ individuals experiencing homelessness are complex and multi-faceted. Studies have shown that men are more likely to become homeless due to structural factors such as unemployment, low income, lack of affordable housing, and social exclusion. Additionally, men are more likely to experience mental health and substance abuse issues, which can contribute to homelessness. On the other hand, women often face additional challenges such as domestic violence and the responsibility of caring for children, which can limit their options for seeking safe and stable housing. As for LGBTQ individuals, they often face discrimination and stigma, leading to difficulties in finding employment and housing, as well as a lack of support from family and friends. Furthermore, LGBTQ youth are often kicked out of their homes due to their sexual orientation or gender identity, making them more vulnerable to homelessness. These issues highlight the importance of addressing the underlying social and economic factors that contribute to homelessness, as well as addressing discrimination and supporting marginalized communities.
+
 # Discussion
 
-## First discussion point {#sec-first-point}
+#4.1	The Key Social Issue of Homelessness in Toronto is Solvable
 
-If my paper were 10 pages, then should be be at least 2.5 pages. The discussion is a chance to show off what you know and what you learnt from all this. 
+Toronto has more than 7,000 emergency shelter beds, provides motels mainly for unhoused families and operates many short-term and long-term outreach and support services for people experiencing homelessness. Between 2019 and 2023, the City of Toronto shows a linear trendline in active homelessness with a total population of active homeless people at 10,029 and 10,072 respectively. That’s not to suggest that these high numbers of people experiencing homelessness is acceptable or that some groups aren’t more vulnerable than others. Although this number has remained flat, there is a disproportionate impact between age groups, gender, and family status. Because of the deep complexities of this social issue, it is difficult to determine why there are extreme differences between the groups that are rising and groups that are decreasing. Is it because of government spending priorities, external factors like the recent pandemic, or other factors like mental health, disabilities or based the fact that you are Indigenous or identify as queer?
 
-## Second discussion point
+The data set in this paper shows that single males over the age of 25 years, have continued to increase at a steady pace in the homeless population, while youth under 24 years and families have declined. There is also a steep decline in refugees around 2020, a result of our borders being closed during Covid19. In 2021, the Indigenous population in the city of Toronto was 0.8% of the total population and yet, 11.4% of the active homeless population identified as Indigenous. @fig-1 Recognizes that certain groups, like Indigenous Peoples, face more discrimination and barriers to housing, the city is placing a greater focus on priority groups. This is why Indigenous Peoples was added as a sixth category of the population in 2021 and likely why there was a decrease in the percent of this group among the active homeless moving from 11.4% in 2021 to 9.5% in 2023 in table-1.  
 
-## Third discussion point
+In the popular podcast “Solvable”, (@cite-1) a nonprofit organization called Community Solutions uses data-driven strategies with the goal of getting chronic homelessness to zero. The initiative recognizes that data is key to understanding how many people are homeless, what do they need, and then providing the necessary supports. Without data, the problem and the people are invisible. This initiative has seen chronic homelessness in communities in Texas and Illinois.
+
+When considering the magnitude of this problem, the complexities and unique challenges within each population group, the challenges of the recent pandemic and the resources at hand, it’s seems like we should be celebrating the governments ability to keep the numbers at bay. However, the fact that a hyper focus on certain populations are resulting in diminished numbers of people who are actively homeless, and the success experienced by other cities in North America, is evidence that what appears to be insurmountable is actually a solvable problem. 
+
+#4.2	Which comes first? Oppression or homelessness?
+
+People experiencing homelessness are some of the most vulnerable in our society. There is also a correlation between low income, race and social exclusion as explained in an article titled “Race, Homelessness and Health in Toronto” (@cite-2) which finds that people of colour not only suffer barriers due to racism, they have poorer health, and are overrepresented among the homeless population. The fact that Indigenous Peoples are also overrepresented in the homeless population (@fig-1) gives rise to the question about the relationship between historically oppressed groups and poverty. In the article “Racism, Homelessness, and the Social Exclusion of Indigenous Peoples in Canada” (@cite-3)  we learn that the impact of colonization and the removal of people from their land has escalated their chance of being unhoused or underhoused. As a result, it makes it hard to find employment, which means lower income and less access to good health care. Or is it the other way around? Poor health leads to lower income which makes it difficult to find housing. People who identify as LGBTQ and who are also tracked in the active housing data, are another group who are oppressed yet they are underrepresented with lower than average numbers when compared to other vulnerable groups. However, there is some evidence to show that this is a group who often choose to ‘stay in the closet’ to avoid discrimination and violence – good reasons to not report yourself as identifying as queer. 
+
+#4.3	The Supply and Demand for Affordable Housing 
+When working to solve the housing problem, data is critical. So is the investment in more affordable housing options, rent controls and wrap around supports. The City of Toronto’s affordable housing website outlines various strategies to address homelessness. One is to incent developers to build more housing and rental units, another is the recent zoning law on laneway houses and another is to offer grants, like the Rapid Housing Initiative Grant, to organizations who can create and operate supportive housing. The results from graph number @fig-6   show that moving people into housing isn’t always successful. People moving back into the shelter system from housing is at @fig-6.. This could be an argument that building more housing is not a solution, however, the real issues as to why people are homeless in the first place are immensely complex and require holistic approaches and ongoing support to ensure long-term success.  Wrap around supports like how to budget for rent, addiction counselling or good mental health care, are necessary complements to the much needed expansion of affordable housing supplies. If a homeless person were to seek housing they'd be put on a waitlist. The average wait time for a subsidized bachelor apartment is 10 years. Scott's Mission a homeless shelter in downtown Toronto is fully booked every night and afraid to move out so they stay. Homeless shelters are a bandaid and not the solution. Shelters aren't safe spaces and the goal needs to be to house people. Supportive shelters can’t keep up with demand because of the intake of refugees, Toronto’s condo boom and the opioid crisis. 
+
+
+##4.4 Government Lack of Spending
+
+John Tory has recognized that the Government isn't spending enough money to support homelessness. Homelessness needs to be declared as a public emergency. The city stated on their website "Higher rates of illness and premature death among the homeless population have been widely recognized". Our hospitals are seeing a rise cold-related injuries due to Toronto's miserable winters. The Council of Toronto was proposed to approve accessible 24-hour, drop-in, and indoor spaces. They proceeded to reject this proposition because it would cost the city $400,000 a month per center to operate. It's unfair to the City to judge how they spend their money but when they add an extra $50,000,000 to the police budget but neglect the cities most vunreable people. It's also cheeky to note they spent $2,000,000 clearing out emcampents even though they created this.  Warming centers aren't the solution as death rates are still high but they're still critical to helping the homeless community. 
 
 ## Weaknesses and next steps
 
-Weaknesses and next steps should also be included.
+For such a complex issue, the data set was very limited. The population groups were very broad and it was not easy to get a clear picture of the cross-sectional aspect of the individuals. One group classified as “chronic” was a group that was consistently growing year over year and while we could see that the majority of this group were male, we could not determine why. Other factors linked to chronic homelessness like disabilities or mental health could be very helpful in determining appropriate solutions but were not introduced. 
+
+From the data, there was no opportunity to understand the gap between active homelessness and the number of beds available. Capturing the percent of beds or available supportive housing units that were open in any given month or the percent of people who are actively seeking shelter but are turned away would be useful in determining supply and demand. 
+Data on Indigenous Peoples was not collected until 2021 and it wasn’t clear if they were already included among the other groups in the prior years. Removing these numbers from one category and into another could make it look like a false decline (although the numbers were so small that it’s unlikely to affect a trend in a major way). 
+
+Finally, understanding the average length of time it takes to go from emergency shelter to permanent housing would allow for greater understanding of how youth are moving through the system. Because they can age out of a lot of services, are they finding solutions after 24 years or are they becoming the statistics in the adult age category?
+
+If homelessness is going to be solved, further studies and a deeper understanding of the issues that create it and support it is required.  An investment in real time data collection and research that can be analyzed for insights will support good decision making and effective use of limited resources. Volunteers, organizations, and front-line social agencies are distributing supplies to shelters and homeless people directly. They stuff backpacks with hats, socks, scarves, and hygiene supplies. These kits are saving people's lives and need to be done more often at a larger scale. John Tory has called for a national mental health summit which is a step in the right direction. Whether any action is going to be taken is yet to be seen.The intersection of two social determinants of health; social supportive networks and the physical environment, lay the foundation for 
+community transformation by enabling harm reduction, democracy, allyship, and engagement. The housing landscape is difficult to understand with all levels of government involved, private, public and non-profits sectors involved so closer collaboration and partnerships where sharing of information can be maximized. Setting targets based on desired success rates and then learning from other communities who have accomplished their goals will improve chances of success. And finally, the saying “it takes a village” reminds us that this is a social issue that all residents of Toronto should be concerned about and step up to support homelessness in ways like renting extra rooms, volunteering or donating. 
+More data may inspire more questions than it does answers, but it can also open the door to many more possibilities.
 
 \newpage
 
@@ -113,5 +333,12 @@ Weaknesses and next steps should also be included.
 
 
 # References
+
+
+
+@cite-1 :“Solvable Podcast - Ronald Young Jr.. Podcast.” Pushkin Industries, https://www.pushkin.fm/podcasts/solvable.
+@cite2: "Frankish, C. James, et al. “Homelessness and Health in Canada: Research Lessons and Priorities - Canadian Journal of Public Health.” SpringerLink, Springer International Publishing, 1 Mar. 2005, https://link.springer.com/article/10.1007/BF03403700."
+@cite-3: "“Definition of Indigenous Homelessness in Canada.” Definition of Indigenous Homelessness in Canada | The Homeless Hub, https://homelesshub.ca/IndigenousHomelessness."
+
 
 
