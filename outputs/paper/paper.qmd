@@ -1,6 +1,6 @@
 ---
-title: "Toronto's Homeless: Understanding the Causes and Seeking Solutions"
-subtitle: "Homelessness "
+title: "Homelessness in Toronto: A Solvable Social Issue"
+subtitle: "Root Causes, Insights and Data-driven Strategies"
 author: 
   - Will Davidson
 thanks: "Code and data are available at: https://github.com/willdavidson01/Toronto-Homeless"
